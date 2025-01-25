@@ -38,6 +38,7 @@ COPY phishing_detection_model /app/phishing_detection_model
 # Set environment variables for memory optimization
 ENV PYTORCH_NO_CUDA=1
 ENV TRANSFORMERS_CACHE=/tmp/transformers_cache
+ENV TRANSFORMERS_OFFLINE=1
 ENV PYTORCH_CPU_ONLY=1
 ENV PYTHONUNBUFFERED=1
 ENV MALLOC_TRIM_THRESHOLD_=100000
@@ -45,10 +46,14 @@ ENV PYTORCH_MPS_ENABLE_IF_AVAILABLE=0
 ENV OMP_NUM_THREADS=1
 ENV PYTHONOPTIMIZE=2
 
-# Clean install of dependencies
+# Clean install of dependencies with specific order
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir setuptools wheel && \
     pip install --no-cache-dir numpy==1.24.3 && \
+    pip install --no-cache-dir torch==2.1.0 && \
+    pip install --no-cache-dir transformers==4.35.0 && \
     pip install --no-cache-dir -r requirements.txt && \
+    python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('bert-base-uncased', local_files_only=True)" && \
     rm -rf /root/.cache/pip
 
 COPY ./app .
