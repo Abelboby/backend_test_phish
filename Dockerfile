@@ -45,8 +45,9 @@ ENV PYTORCH_MPS_ENABLE_IF_AVAILABLE=0
 ENV OMP_NUM_THREADS=1
 ENV PYTHONOPTIMIZE=2
 
-# Pin numpy version and install requirements with memory optimizations
-RUN pip install numpy==1.24.3 && \
+# Clean install of dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir numpy==1.24.3 && \
     pip install --no-cache-dir -r requirements.txt && \
     rm -rf /root/.cache/pip
 
