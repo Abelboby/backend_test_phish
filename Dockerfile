@@ -9,6 +9,12 @@ RUN apt-get update && apt-get install -y \
     portaudio19-dev \
     python3-pyaudio \
     python3-dev \
+    libportaudio2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install portaudio development files
+RUN apt-get update && apt-get install -y \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
