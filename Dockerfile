@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p /vosk/model && \
     mkdir -p /app/phishing_detection_model
 
-# Download and setup Vosk model
+# Download and setup Vosk model (using smaller model)
 RUN cd /vosk && \
     wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && \
     apt-get update && apt-get install -y unzip && \
@@ -41,6 +41,9 @@ ENV TRANSFORMERS_CACHE=/tmp/transformers_cache
 ENV PYTORCH_CPU_ONLY=1
 ENV PYTHONUNBUFFERED=1
 ENV MALLOC_TRIM_THRESHOLD_=100000
+ENV PYTORCH_MPS_ENABLE_IF_AVAILABLE=0
+ENV OMP_NUM_THREADS=1
+ENV PYTHONOPTIMIZE=2
 
 # Pin numpy version and install requirements with memory optimizations
 RUN pip install numpy==1.24.3 && \
@@ -52,4 +55,4 @@ COPY ./app .
 EXPOSE 5000
 
 # Run with memory optimization flags
-CMD ["python", "-X", "utf8", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"] 
+CMD ["python", "-X", "utf8", "main.py"] 
