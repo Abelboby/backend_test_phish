@@ -8,6 +8,7 @@ from vosk import Model, KaldiRecognizer
 from transformers import BertTokenizer, BertForSequenceClassification
 import threading
 import time
+import gc
 
 app = Flask(__name__)
 CORS(app)
@@ -19,13 +20,38 @@ if not os.path.exists(model_path):
     print("Model not found, please ensure the model is extracted to", model_path)
     exit(1)
 
-# Load the Vosk model for speech recognition
-vosk_model = Model(model_path)
-rec = KaldiRecognizer(vosk_model, 16000)
+# Initialize models as None
+vosk_model = None
+rec = None
+tokenizer = None
+model = None
 
-# Load the BERT tokenizer and model
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+def initialize_models():
+    global vosk_model, rec, tokenizer, model
+    
+    # Load Vosk model only when needed
+    if vosk_model is None:
+        vosk_model = Model(model_path)
+        rec = KaldiRecognizer(vosk_model, 16000)
+
+    # Load BERT model only when needed
+    if model is None:
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+        # Move model to CPU to save memory
+        model.cpu()
+
+def cleanup_models():
+    global vosk_model, rec, tokenizer, model
+    
+    # Clear models from memory
+    vosk_model = None
+    rec = None
+    tokenizer = None
+    model = None
+    # Force garbage collection
+    gc.collect()
+    torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
 def preprocess_text(text):
     inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt", max_length=512)
@@ -38,7 +64,7 @@ def predict_phishing(text):
     
     logits = outputs.logits
     probabilities = torch.nn.functional.softmax(logits, dim=1)
-    phishing_probability = probabilities[0][1].item() * 100  # Convert to percentage
+    phishing_probability = probabilities[0][1].item() * 100
     return phishing_probability
 
 # Global variables to store the latest recognition results
@@ -77,6 +103,7 @@ def audio_recognition_thread():
 def start_detection():
     global is_detecting, high_risk_reached
     if not is_detecting:
+        initialize_models()
         is_detecting = True
         high_risk_reached = False
         threading.Thread(target=audio_recognition_thread).start()
@@ -86,6 +113,7 @@ def start_detection():
 def stop_detection():
     global is_detecting
     is_detecting = False
+    cleanup_models()
     return jsonify({"status": "stopped"})
 
 @app.route('/get_latest', methods=['GET'])

@@ -31,12 +31,21 @@ RUN mkdir -p /vosk/model && \
 
 COPY requirements.txt .
 
-# Pin numpy version to avoid compatibility issues
+# Set environment variables for memory optimization
+ENV PYTORCH_NO_CUDA=1
+ENV TRANSFORMERS_CACHE=/tmp/transformers_cache
+ENV PYTORCH_CPU_ONLY=1
+ENV PYTHONUNBUFFERED=1
+ENV MALLOC_TRIM_THRESHOLD_=100000
+
+# Pin numpy version and install requirements with memory optimizations
 RUN pip install numpy==1.24.3 && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    rm -rf /root/.cache/pip
 
 COPY ./app .
 
 EXPOSE 5000
 
-CMD ["python", "main.py"] 
+# Run with memory optimization flags
+CMD ["python", "-X", "utf8", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"] 
