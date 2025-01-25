@@ -36,8 +36,8 @@ def initialize_models():
 
     # Load BERT model only when needed
     if model is None:
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+        tokenizer = BertTokenizer.from_pretrained('/app/phishing_detection_model')
+        model = BertForSequenceClassification.from_pretrained('/app/phishing_detection_model', num_labels=2)
         # Move model to CPU to save memory
         model.cpu()
 

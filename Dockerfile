@@ -18,9 +18,12 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directory and download Vosk model
+# Create directories for models
 RUN mkdir -p /vosk/model && \
-    cd /vosk && \
+    mkdir -p /app/phishing_detection_model
+
+# Download and setup Vosk model
+RUN cd /vosk && \
     wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && \
     apt-get update && apt-get install -y unzip && \
     unzip vosk-model-small-en-us-0.15.zip && \
@@ -30,6 +33,7 @@ RUN mkdir -p /vosk/model && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+COPY phishing_detection_model /app/phishing_detection_model
 
 # Set environment variables for memory optimization
 ENV PYTORCH_NO_CUDA=1
